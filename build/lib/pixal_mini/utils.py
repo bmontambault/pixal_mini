@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from .PredicateInduction import PredicateInduction
 
 from rpy2.robjects.packages import importr
 from rpy2.robjects import numpy2ri, pandas2ri
