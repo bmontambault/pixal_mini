@@ -4,11 +4,12 @@ from .Predicate import Predicate
 
 class PredicateInduction:
     
-    def __init__(self, data, dtypes, target, attributes=None, bins=25):
+    def __init__(self, data, dtypes, target, attributes=None, bins=25, side=None):
         self.data = data
         self.dtypes = dtypes
         self.target = target
         self.bins = bins
+        self.side = side
         
         self.data_ = pd.DataFrame()
         self.dtypes_ = {}
@@ -38,9 +39,9 @@ class PredicateInduction:
         dtype = self.dtypes_[attribute]
         values = self.data_[attribute].unique()
         if dtype == 'ordinal':
-            return {value: Predicate(self.data_, self.dtypes_, {attribute: [value, value]}, target=self.target) for value in values}
+            return {value: Predicate(self.data_, self.dtypes_, {attribute: [value, value]}, target=self.target, side=self.side) for value in values}
         else:
-            return {value: Predicate(self.data_, self.dtypes_, {attribute: [value]}, target=self.target) for value in values}
+            return {value: Predicate(self.data_, self.dtypes_, {attribute: [value]}, target=self.target, side=self.side) for value in values}
     
     def get_adjacent_attribute(self, predicate, attribute):
         if self.dtypes_[attribute] == 'nominal':
@@ -69,7 +70,7 @@ class PredicateInduction:
                 values = [left, right]
             attribute_values[attribute] = values
             
-        new_predicate = Predicate(self.data_, self.dtypes_, attribute_values, parent=parent)
+        new_predicate = Predicate(self.data_, self.dtypes_, attribute_values, parent=parent, side=self.side)
         new_bf = new_predicate.bf(self.target)
         return new_predicate, new_bf
     

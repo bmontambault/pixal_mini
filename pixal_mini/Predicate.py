@@ -1,10 +1,11 @@
 import pandas as pd
 from .utils import ttestBF
 from .utils import proportionBF
+from .utils import BF
 
 class Predicate:
     
-    def __init__(self, data, dtypes, attribute_values, attribute_mask=None, target=None, parent=None):
+    def __init__(self, data, dtypes, attribute_values, attribute_mask=None, target=None, parent=None, side=None):
         self.data = data
         self.dtypes = dtypes
         self.attribute_values = attribute_values
@@ -17,6 +18,7 @@ class Predicate:
         self.bf_score = None
         self.attributes = list(self.attribute_mask.columns)
         self.parent = parent
+        self.side = side
         
     def get_attribute_mask(self):
         return pd.DataFrame({k: self.get_attribute_value_mask(k, v) for k,v in self.attribute_values.items()})
@@ -35,9 +37,9 @@ class Predicate:
             x = self.data.loc[self.mask, target]
             y = self.data.loc[~self.mask, target]
             if dtype == 'numeric':
-                self.bf_score = ttestBF(x, y)
+                self.bf_score = ttestBF(x, y, self.side)
             elif dtype == 'binary':
-                self.bf_score = proportionBF(x, y)
+                self.bf_score = proportionBF(x, y, self.side)
         return self.bf_score
     
     def is_subsumed(self, predicate):

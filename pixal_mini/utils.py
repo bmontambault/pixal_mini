@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import rpy2.rinterface_lib.callbacks
 from rpy2.robjects.packages import importr
 from rpy2.robjects import numpy2ri, pandas2ri
 import rpy2.rinterface_lib.callbacks
@@ -18,18 +18,38 @@ stderr_orig = rpy2.rinterface_lib.callbacks.consolewrite_warnerror
 rpy2.rinterface_lib.callbacks.consolewrite_print     = add_to_stdout
 rpy2.rinterface_lib.callbacks.consolewrite_warnerror = add_to_stderr
 
-def ttestBF(x, y):
+def ttestBF(x, y, side=None):
     if len(x)>1 and len(y)>1:
+        if side == 'right':
+            if y.mean()>x.mean():
+                return -np.inf
+        elif side == 'left':
+            if x.mean()>y.mean():
+                return -np.inf 
         res = RBayesFactor.ttestBF(x=x, y=y)
         bf = res.slots['bayesFactor']['bf'][0]
         return bf
     else:
         return -np.inf
 
-def proportionBF(x, y):
-    res = RBayesFactor.proportionBF(x.sum(), x.sum()+y.sum(), p=y.mean())
+
+def proportionBF(x, y, side=None):
+    if side == 'right':
+        if y.mean()>x.mean():
+            return -np.inf
+    elif side == 'left':
+        if x.mean()>y.mean():
+            return -np.inf
+    res = RBayesFactor.proportionBF(x.sum(), len(x), p=y.mean())
     bf = res.slots['bayesFactor']['bf'][0]
     return bf
+
+
+def BF(x, y, dtype='numeric'):
+    if dtype == 'binary':
+        return proportionBF(x, y)
+    else:
+        return ttestBF(x, y)
 
 def sample_predicate_continuous(data, feature, p):
     bins = int(np.ceil(1/p))
