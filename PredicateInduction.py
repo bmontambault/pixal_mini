@@ -199,7 +199,7 @@ class PredicateInduction:
                                 predicate_children.append(p_)
                 if len(predicate_children) > 0:
                     for child in predicate_children:
-                        frontier = self.insert_predicate_sorted(frontier, p_, bf_)
+                        frontier = self.insert_predicate_sorted(frontier, child, child.bf())
                 else:
                     accepted.append(p)
             else:
