@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from .PredicateInduction import PredicateInduction
 
 from rpy2.robjects.packages import importr
 from rpy2.robjects import numpy2ri, pandas2ri
@@ -127,3 +128,8 @@ def sample_predicates(data, dtypes, num_predicates, min_k, max_k, p, score_col, 
             else:
                 i+=1
     return predicates, predicate_masks
+
+def pixal(data, dtypes, target, attributes=None, bins=25):
+    pi = PredicateInduction(data, dtypes, target, attributes, bins)
+    pi.search()
+    return pi.accepted

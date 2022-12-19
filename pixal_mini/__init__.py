@@ -15,5 +15,6 @@ from .utils import sample_predicate_nominal
 from .utils import sample_predicate_binary
 from .utils import sample_predicate
 from .utils import sample_predicates
+from .utils import pixal
 from .Predicate import Predicate
 from .PredicateInduction import PredicateInduction
