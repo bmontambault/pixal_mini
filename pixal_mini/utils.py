@@ -40,7 +40,8 @@ def proportionBF(x, y, side=None):
     elif side == 'left':
         if x.mean()>y.mean():
             return -np.inf
-    res = RBayesFactor.proportionBF(x.sum(), len(x), p=y.mean())
+    p = min(max(.0001, y.mean()), .9999)
+    res = RBayesFactor.proportionBF(x.sum(), len(x), p=p)
     bf = res.slots['bayesFactor']['bf'][0]
     return bf
 
