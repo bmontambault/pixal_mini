@@ -191,7 +191,7 @@ class PredicateInduction:
             predicate_children = []
             if len(p.attributes)>1:
                 for attr in p.attributes:
-                    if self.dtypes[attr] == 'nominal':
+                    if self.dtypes_[attr] == 'nominal':
                         adj = [v for k,v in self.base_predicates[attr].items() if k not in p.attribute_values[attr]]
                         for a in adj:
                             p_, bf_ = self.conjoin_predicates([p, a])
