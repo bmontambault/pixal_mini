@@ -13,15 +13,21 @@ class PredicateInduction:
         
         self.data_ = pd.DataFrame()
         self.dtypes_ = {}
-        self.col_map = {}
+        self.col_map_left = {}
+        self.col_map_right = {}
         for col in self.data.columns:
             if self.dtypes[col] == 'numeric' and col != self.target:
-                d = pd.cut(self.data[col], bins=bins).apply(lambda x: (x.left+x.right)/2)
-                d_map = pd.Series(d.unique().sort_values())
+                d = pd.cut(self.data[col], bins=bins)
+                d_map_left = pd.Series(d.unique()).apply(lambda x: x.left).sort_values()
+                d_map_left.index = range(len(d_map_left))
+                d_map_right = pd.Series(d.unique()).apply(lambda x: x.right).sort_values()
+                d_map_right.index = range(len(d_map_right))
                 new_col = col + '_binned'
-                self.data_[new_col] = d.map(pd.Series(d_map.index, index=d_map))
+                self.data_[new_col] = d.apply(lambda x: x.left).map(pd.Series(d_map_left.index, index=d_map_left))
+            
                 self.dtypes_[new_col] = 'ordinal'
-                self.col_map[new_col] = d_map
+                self.col_map_left[new_col] = d_map_left
+                self.col_map_right[new_col] = d_map_right
             else:
                 self.data_[col] = self.data[col]
                 self.dtypes_[col] = self.dtypes[col]
@@ -29,7 +35,7 @@ class PredicateInduction:
         if attributes is None:
             self.attributes = [col for col in self.data_.columns if col != self.target]
         else:
-            self.attributes = attributes
+            self.attributes = [col if self.dtypes[col] != 'numeric' else col+'_binned' for col in attributes]
         
         self.base_predicates = {attribute: self.get_base_predicates_attribute(attribute) for attribute in self.attributes}
         self.frontier = []
@@ -57,7 +63,6 @@ class PredicateInduction:
     def conjoin_predicates(self, predicates):
         attributes = list(set([a for b in [p.attributes for p in predicates] for a in b]))
         parent = max(predicates, key=lambda x: x.bf(self.target))
-        bf = parent.bf()
         attribute_values = {}
         for attribute in attributes:
             values_ = [p.attribute_values[attribute] for p in predicates if attribute in p.attributes]
@@ -70,7 +75,7 @@ class PredicateInduction:
                 values = [left, right]
             attribute_values[attribute] = values
             
-        new_predicate = Predicate(self.data_, self.dtypes_, attribute_values, parent=parent, side=self.side)
+        new_predicate = Predicate(self.data_, self.dtypes_, attribute_values, target=self.target, parent=parent, side=self.side)
         new_bf = new_predicate.bf(self.target)
         return new_predicate, new_bf
     
@@ -208,11 +213,9 @@ class PredicateInduction:
         self.accepted = accepted
         self.frontier = frontier
     
-    def search_(self, max_frontier_length=100):
+    def search_(self):
         init = True
         while init or len(self.frontier)>0:
-            if len(self.frontier) > max_frontier_length:
-                self.frontier = self.frontier[:max_frontier_length]
             self.display_frontier_length()
             self.refine()
             self.display_frontier_length()
@@ -231,12 +234,29 @@ class PredicateInduction:
         self.frontier = [self.frontier[j] for j in range(len(self.frontier)) if j not in accepted_index]
         self.display_frontier_length()
         
-    def search(self, max_frontier_length=100):
+    def search(self):
         init = True
         while init or len(self.frontier)>0:
-            self.search_(max_frontier_length)
+            self.search_()
             init = False
         self.accepted = [a for a in self.accepted if a.bf()>0]
+        predicates = [self.map_predicate(a) for a in self.accepted]
+        return predicates
+    
+    def map_predicate(self, predicate):
+        attribute_values = {}
+        attribute_mask = pd.DataFrame()
+        for k,v in predicate.attribute_values.items():
+            if '_binned' in k:
+                left = self.col_map_left[k][v[0]]
+                right = self.col_map_right[k][v[1]]
+                attribute_values['_binned'.join(k.split('_binned')[:-1])] = [left, right]
+                attribute_mask['_binned'.join(k.split('_binned')[:-1])] = predicate.attribute_mask[k]
+            else:
+                attribute_values[k] = v
+                attribute_mask[k] = predicate.attribute_mask[k]
+        predicate = Predicate(self.data, self.dtypes, attribute_values, attribute_mask)
+        return predicate
             
     def display_frontier_length(self):
         clear_output()

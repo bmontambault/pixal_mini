@@ -1,7 +1,6 @@
 import pandas as pd
 from .utils import ttestBF
 from .utils import proportionBF
-from .utils import BF
 
 class Predicate:
     
@@ -15,7 +14,7 @@ class Predicate:
             self.attribute_mask = attribute_mask
         self.mask = self.attribute_mask.all(axis=1)
         self.target = target
-        self.bf_score = None
+        self.bf_score = {}
         self.attributes = list(self.attribute_mask.columns)
         self.parent = parent
         self.side = side
@@ -29,18 +28,32 @@ class Predicate:
         else:
             return (self.data[attribute] >= value[0]) & (self.data[attribute] <= value[1])
         
-    def bf(self, target=None):
-        if self.bf_score is None:
-            if target is None:
-                target = self.target
-            dtype = self.dtypes[target]
-            x = self.data.loc[self.mask, target]
-            y = self.data.loc[~self.mask, target]
-            if dtype == 'numeric':
-                self.bf_score = ttestBF(x, y, self.side)
-            elif dtype == 'binary':
-                self.bf_score = proportionBF(x, y, self.side)
-        return self.bf_score
+    def bf(self, target=None, attribute=None, data=None, mask=None, apply_attribute=True):
+        if data is None:
+            data = self.data
+        if mask is None:
+            mask = self.mask
+        if target is None:
+            target = self.target
+        
+        if target is None:
+            print(self, target, attribute)
+            
+        if (target, attribute) not in self.bf_score:
+            if attribute is not None and apply_attribute:
+                other_mask = self.mask[[attr for attr in self.attributes if attr != attribute]].all(axis=1)
+                return self.bf(target, attribute, data.loc[other_mask], mask.loc[other_mask], False)
+            else:
+                if target == 'count':
+                    self.bf_score[(target, attribute)]  = proportionBF(mask.astype(int), (~mask).astype(int), self.side)
+                else:
+                    x = data.loc[mask, target]
+                    y = data.loc[~mask, target]
+                    if self.dtypes[target] == 'numeric':
+                        self.bf_score[(target, attribute)] = ttestBF(x, y, self.side)
+                    elif self.dtypes[target] == 'binary':
+                        self.bf_score[(target, attribute)] = proportionBF(x, y, self.side)
+        return self.bf_score[(target, attribute)]
     
     def is_subsumed(self, predicate):
         attributes_overlap = set(self.attributes).issubset(predicate.attributes)

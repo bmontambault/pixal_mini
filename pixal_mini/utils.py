@@ -45,13 +45,6 @@ def proportionBF(x, y, side=None):
     bf = res.slots['bayesFactor']['bf'][0]
     return bf
 
-
-def BF(x, y, dtype='numeric'):
-    if dtype == 'binary':
-        return proportionBF(x, y)
-    else:
-        return ttestBF(x, y)
-
 def sample_predicate_continuous(data, feature, p):
     bins = int(np.ceil(1/p))
     feature_bin = np.random.choice(pd.cut(data[feature], bins=bins).unique())
@@ -148,8 +141,3 @@ def sample_predicates(data, dtypes, num_predicates, min_k, max_k, p, score_col, 
             else:
                 i+=1
     return predicates, predicate_masks
-
-def pixal(data, dtypes, target, attributes=None, bins=25):
-    pi = PredicateInduction(data, dtypes, target, attributes, bins)
-    pi.search()
-    return pi.accepted
