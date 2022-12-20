@@ -39,17 +39,17 @@ class Predicate:
         if (target, attribute) not in self.bf_score:
             if attribute is not None and apply_attribute:
                 other_mask = self.attribute_mask[[attr for attr in self.attributes if attr != attribute]].all(axis=1)
-                return self.bf(target, attribute, data.loc[other_mask], mask.loc[other_mask], False)
+                self.bf_score[(target, attribute)] = self.bf(target, attribute, data.loc[other_mask], mask.loc[other_mask], False)
             else:
                 if target == 'count':
                     self.bf_score[(target, attribute)]  = proportionBF(mask.astype(int), (~mask).astype(int), self.side)
                 else:
                     x = data.loc[mask, target]
                     y = data.loc[~mask, target]
-                    if self.dtypes[target] == 'numeric':
-                        self.bf_score[(target, attribute)] = ttestBF(x, y, self.side)
-                    elif self.dtypes[target] == 'binary':
+                    if self.dtypes[target] == 'binary':
                         self.bf_score[(target, attribute)] = proportionBF(x, y, self.side)
+                    else:
+                        self.bf_score[(target, attribute)] = ttestBF(x, y, self.side)
         return self.bf_score[(target, attribute)]
     
     def is_subsumed(self, predicate):

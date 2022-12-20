@@ -213,9 +213,11 @@ class PredicateInduction:
         self.accepted = accepted
         self.frontier = frontier
     
-    def search_(self):
+    def search_(self, max_frontier_length=100):
         init = True
         while init or len(self.frontier)>0:
+            if len(self.frontier) > max_frontier_length:
+                self.frontier = self.frontier[:max_frontier_length]
             self.display_frontier_length()
             self.refine()
             self.display_frontier_length()
@@ -234,10 +236,10 @@ class PredicateInduction:
         self.frontier = [self.frontier[j] for j in range(len(self.frontier)) if j not in accepted_index]
         self.display_frontier_length()
         
-    def search(self):
+    def search(self, max_frontier_length=100):
         init = True
         while init or len(self.frontier)>0:
-            self.search_()
+            self.search_(max_frontier_length)
             init = False
         self.accepted = [a for a in self.accepted if a.bf()>0]
         predicates = [self.map_predicate(a) for a in self.accepted]
