@@ -35,13 +35,10 @@ class Predicate:
             mask = self.mask
         if target is None:
             target = self.target
-        
-        if target is None:
-            print(self, target, attribute)
             
         if (target, attribute) not in self.bf_score:
             if attribute is not None and apply_attribute:
-                other_mask = self.mask[[attr for attr in self.attributes if attr != attribute]].all(axis=1)
+                other_mask = self.attribute_mask[[attr for attr in self.attributes if attr != attribute]].all(axis=1)
                 return self.bf(target, attribute, data.loc[other_mask], mask.loc[other_mask], False)
             else:
                 if target == 'count':
